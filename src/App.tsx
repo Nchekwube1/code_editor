@@ -1,7 +1,8 @@
 import React, {useEffect,useState,useRef} from 'react';
 import './App.css';
 import * as esbuild_wasm from "esbuild-wasm"
-import {unpkgPathlugin} from "./plugis/unpkg_path"
+import {unpkgPathplugin} from "./plugins/unpkg_path"
+import {buildPlugin} from "./plugins/build_plugin"
 function App() {
   const [input,setInput] = useState("")
   const [code,setCode] = useState<string>("")
@@ -9,7 +10,7 @@ function App() {
   const startService = async()=>{
   await esbuild_wasm.initialize({
      worker:true,
-     wasmURL:"/esbuild.wasm"
+     wasmURL:"https://unpkg.com/esbuild-wasm/esbuild.wasm"
    })
 
     ref.current = true
@@ -29,7 +30,7 @@ function App() {
      bundle:true,
      write:false,
      entryPoints:["index.js"],
-     plugins:[unpkgPathlugin(input)],
+     plugins:[unpkgPathplugin(), buildPlugin(input)],
        define: { 'process.env.NODE_ENV': '"production"',
          'global':'"window"'
        }
