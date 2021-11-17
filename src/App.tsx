@@ -5,17 +5,42 @@ import {unpkgPathplugin} from "./plugins/unpkg_path"
 import {buildPlugin} from "./plugins/build_plugin"
 function App() {
   const [input,setInput] = useState("")
-  const [code,setCode] = useState<string>("")
+  // const [code,setCode] = useState<string>("")
+
+
   const ref = useRef<any>()
+  const iframe = useRef<any>()
   const startService = async()=>{
   await esbuild_wasm.initialize({
      worker:true,
-     wasmURL:"https://unpkg.com/esbuild-wasm/esbuild.wasm"
+     wasmURL:"https://unpkg.com/esbuild-wasm@0.13.13/esbuild.wasm"
    })
 
     ref.current = true
   }
   
+  const html =  `
+<html>
+<head>
+</head>
+<body>
+ <div id="root">
+ </div>
+<script>
+window.addEventListener("message",(event)=>{
+  try{
+    eval(event.data)
+  }
+  catch(err){
+    const root = document.getElementById("root")
+    root.innerHTML = '<div style="color:red;"><h4>Runtime Error </h4>' + err + '</div>'
+  }
+},false)
+</script>
+</body>
+</html>
+  `
+
   useEffect(()=>{
     startService()
         },[])
@@ -23,6 +48,7 @@ function App() {
   const sub =  async(e:any)=>{
 
     e.preventDefault()
+    iframe.current.srcdoc = html
     if(!ref.current){
       return
     }
@@ -37,10 +63,8 @@ function App() {
  
    })
 
-   console.log(target)
-   setCode(target.outputFiles[0].text)
+   iframe.current.contentWindow.postMessage(target.outputFiles[0].text,"*")
    setInput("")
-    // console.log("submit",target)
  }
 
   return (
@@ -50,7 +74,7 @@ function App() {
         <button type="submit">submit</button>
       </form>
 
-      <h2>{code}</h2>
+      <iframe ref={iframe} srcDoc={html} title="code runner"  />
     </div>
   );
 }
