@@ -1,11 +1,10 @@
 import  {useState,useRef} from 'react';
-import './App.css';
 import prettier from "prettier"
 import parser from "prettier/parser-babel"
-import CodeEditor,{OnMount} from './compnents/code-editor';
-import Preview from './compnents/Preview';
-import Index from './bundler';
-function App() {
+import CodeEditor,{OnMount} from './code-editor';
+import Preview from './Preview';
+import Index from '../bundler';
+function Cell() {
   const [input,setInput] = useState<string>("")
   const [code,setCode] = useState<string>("")
   const editorRef = useRef<any>()
@@ -55,4 +54,7 @@ const handleEditorChange:OnMount = (editor ,monaco) =>{
   );
 }
 
-export default App;
+export default Cell;
+
+
+
