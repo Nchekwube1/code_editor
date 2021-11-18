@@ -1,80 +1,56 @@
-import React, {useEffect,useState,useRef} from 'react';
+import  {useState,useRef} from 'react';
 import './App.css';
-import * as esbuild_wasm from "esbuild-wasm"
-import {unpkgPathplugin} from "./plugins/unpkg_path"
-import {buildPlugin} from "./plugins/build_plugin"
+import prettier from "prettier"
+import parser from "prettier/parser-babel"
+import CodeEditor,{OnMount} from './compnents/code-editor';
+import Preview from './compnents/Preview';
+import Index from './bundler';
 function App() {
-  const [input,setInput] = useState("")
-  // const [code,setCode] = useState<string>("")
+  const [input,setInput] = useState<string>("")
+  const [code,setCode] = useState<string>("")
+  const editorRef = useRef<any>()
 
-
-  const ref = useRef<any>()
-  const iframe = useRef<any>()
-  const startService = async()=>{
-  await esbuild_wasm.initialize({
-     worker:true,
-     wasmURL:"https://unpkg.com/esbuild-wasm@0.13.13/esbuild.wasm"
-   })
-
-    ref.current = true
+const handleEditorChange:OnMount = (editor ,monaco) =>{
+  editorRef.current = editor
+  editor.onDidChangeModelContent(()=>{
+    setInput(editorRef.current.getValue())
+  })
   }
+  const formatContent = ()=>{
+    const unformatted = editorRef.current.getValue()
+    console.log(unformatted)
+    const formatted =prettier.format(unformatted,{
+    parser:"babel",
+    plugins:[parser],
+    useTabs:false,
+    semi:true,
+    singleQuote:true
+    }).replace("/\n$/","")
+
+    editorRef.current.setValue(formatted)
+
+  }
+
   
-  const html =  `
-<html>
-<head>
-</head>
-<body>
- <div id="root">
- </div>
-<script>
-window.addEventListener("message",(event)=>{
-  try{
-    eval(event.data)
-  }
-  catch(err){
-    const root = document.getElementById("root")
-    root.innerHTML = '<div style="color:red;"><h4>Runtime Error </h4>' + err + '</div>'
-  }
-},false)
-</script>
-</body>
-</html>
-  `
-
-  useEffect(()=>{
-    startService()
-        },[])
 
   const sub =  async(e:any)=>{
 
     e.preventDefault()
-    iframe.current.srcdoc = html
-    if(!ref.current){
-      return
-    }
-    const target = await esbuild_wasm.build({
-     bundle:true,
-     write:false,
-     entryPoints:["index.js"],
-     plugins:[unpkgPathplugin(), buildPlugin(input)],
-       define: { 'process.env.NODE_ENV': '"production"',
-         'global':'"window"'
-       }
- 
-   })
+    const res = await Index(input)
 
-   iframe.current.contentWindow.postMessage(target.outputFiles[0].text,"*")
+   setCode(res)
+
    setInput("")
  }
 
   return (
     <div className="App">
       <form onSubmit={sub}>
-        <textarea value={input} onChange={e=>setInput(e.target.value)} ></textarea>
+        <CodeEditor initialValue="" onMount={handleEditorChange} formatContent={formatContent} />
         <button type="submit">submit</button>
       </form>
+      <Preview code={code}/>
 
-      <iframe ref={iframe} srcDoc={html} title="code runner"  />
     </div>
   );
 }

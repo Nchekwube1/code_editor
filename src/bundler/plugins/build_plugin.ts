@@ -7,7 +7,7 @@ const fileCache = localforage.createInstance({
 });
 
 
-export const buildPlugin =(inputCode:string)=>{
+export const buildPlugin =(inputCode?:string)=>{
     return{
         name:"build Plugin",
         setup(build:esbuild.PluginBuild){
@@ -45,7 +45,6 @@ export const buildPlugin =(inputCode:string)=>{
 
 
  build.onLoad({filter:/^index\.js$/},async(args:any)=>{
-            console.log(args ,"js")
 
                return {
             loader:"jsx",
